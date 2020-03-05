@@ -9,18 +9,18 @@
 @section('content')
 <div class="container">
     <div class="row justify-content-center">
-        <div class="col-md-8">
+        <div class="col-md-12">
             <div class="card">
-                <div class="card-header">Dashboard</div>
+                <div class="card-header">Photo Gallery</div>
 
-                <div class="card-body">
+                <div class="card-body" id="card_body">
                     @if (session('status'))
                         <div class="alert alert-success" role="alert">
                             {{ session('status') }}
                         </div>
                     @endif
 
-                    You are logged in!
+                    
                 </div>
             </div>
         </div>
@@ -51,7 +51,7 @@
                 <label for="photo">Photo</label>
                 <input type="file" name="photo" id="photo" class="form-control" required onchange="get_image_data()">
             </div>
-                <button type="submit" class="btn btn-primary">Save</button>
+                <button disabled type="submit" id="save_button" class="btn btn-primary">Save</button>
             </form>
 
             <!-- <a class="nav-link" href="javascript:void(0)" onclick="closePhotoModal()">Close</a> -->
@@ -69,9 +69,9 @@
 @push('js')
 <!-- <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script> -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@9"></script>
-<!-- <script src="{{asset('js/barfiller_progressbar.js')}}"></script> -->
 <script>    
     function openPhotoModal(){
+        $('#target').trigger('reset');
         $('#photo_modal').modal('show');
     }
 
@@ -84,22 +84,65 @@
             var image_size = property.size;
             console.log(image_size);
             if(image_size > 5000000){
-                console.log('too large image size');
+                Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                timer:3000,
+                text: `File size is too large.<br>Please upload below 5mb size image.`
+                })
+                $('#save_button').prop('disabled',true);
             }else{
-                console.log('image size is ok');
+                $('#save_button').prop('disabled',false);
             }
         }else{
-            console.log('not ok');
+            Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: 'Please select PNG file to upload',
+                timer:3000,
+                })
+                $('#save_button').prop('disabled',true);
         }
         
     }
 
+    function get_all_photos(){
+        $.ajax({
+            type : 'get',
+            url : "{{route('get_all_photos')}}",
+            dataType : 'json',
+            success : function(data){
+                var html = `<div class="row">`;
+                data.forEach(function(value,key){
+                    var stln = value.title.length;
+                    console.log(stln);
+                    html += `<div class="col-md-3">
+                        <h4 class="text-center" id="photo_title${value.id}">`;
+                        if(stln > 20){
+                            html+= `<span id="jamal${value.id}">${value.title}</span>`
+                            
+                            $("#jamal"+value.id).animate({height: "300px"});
+                            
+                        }else{
+                            html+=value.title
+                        }
+                        
+                    html += `</h4>
+                        <img width="100%" src="{{asset('images')}}/${value.photo}" />
+                    </div>`;
+                });
+                html+=`</div>`;
+                $('#card_body').html(html);
+            }
+        });
+    }
+
    
     $(document).ready(function(){
-        
-        $('input[type="file"]').change(function(e){
-            var fileName = e.target.files[0].name;
-        });
+        get_all_photos();
+        // $('input[type="file"]').change(function(e){
+        //     var fileName = e.target.files[0].name;
+        // });
 
         $('#target').on('submit',function(e){
             e.preventDefault();    
@@ -121,6 +164,7 @@
                 cache : false,
                 success : function(data){
                     console.log(data.message);
+                    get_all_photos();
                     if(data){
                         var count = 100;
                         $('.fill').attr('data-percentage',`${count}`);

@@ -18,4 +18,9 @@ class PhotoController extends Controller
         $photo->save();
         return response()->json(['message'=>'Photo added successfully']);
     }
+
+    public function get_all_photos(){
+        $photos = Photo::all();
+        return $photos;
+    }
 }
