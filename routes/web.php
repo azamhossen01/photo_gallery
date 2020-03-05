@@ -20,7 +20,3 @@ Auth::routes();
 Route::get('/home', 'HomeController@index')->name('home');
 
 Route::post('save_photo','PhotoController@save_photo')->name('save_photo');
-
-Route::get('jamal',function(){
-    return view('jamal');
-});
